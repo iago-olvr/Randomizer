@@ -14,11 +14,11 @@ import java.io.OutputStream
 
 /** Gera um PNG completo, sem capturar botões, diálogos ou áreas cortadas da tela. */
 internal object CharacterImageExporter {
-    fun writePng(state: GameState, output: OutputStream) {
+    fun writePng(state: GameState, output: OutputStream, name: String = "") {
         val summary = CharacterSummary.from(state)
         val bitmap = Bitmap.createBitmap(1080, 1280, Bitmap.Config.ARGB_8888)
         try {
-            drawSummary(Canvas(bitmap), summary)
+            drawSummary(Canvas(bitmap), summary, name.trim().take(60))
             if (!bitmap.compress(Bitmap.CompressFormat.PNG, 100, output)) {
                 throw IOException("Não foi possível gerar o PNG.")
             }
@@ -27,7 +27,7 @@ internal object CharacterImageExporter {
         }
     }
 
-    private fun drawSummary(canvas: Canvas, summary: CharacterSummary) {
+    private fun drawSummary(canvas: Canvas, summary: CharacterSummary, name: String) {
         val gold = MedievalColors.Bronze
         val purple = MedievalColors.Wine
         val white = MedievalColors.Ink
@@ -64,6 +64,13 @@ internal object CharacterImageExporter {
         text("RANDOMIZER", 64f, 112f, 36f, gold, bold = true)
         text(summary.mode, 64f, 202f, 64f, white, bold = true)
         text("Sete atributos. Uma nova história.", 64f, 258f, 30f, muted)
+        if (name.isNotEmpty()) {
+            // Ajusta o nome inteiro à largura disponível, inclusive com caracteres largos.
+            paint.typeface = Typeface.create("serif", Typeface.BOLD)
+            paint.textSize = 38f
+            val size = 38f * minOf(1f, 952f / paint.measureText(name))
+            text(name, 64f, 320f, size, white, bold = true)
+        }
 
         val tile = 220f
         summary.groups.forEachIndexed { groupIndex, attributes ->

@@ -40,7 +40,7 @@ class DiceRollAnimationTest {
         val restoration = StateRestorationTester(compose)
         restoration.setContent { RandomizerApp() }
         compose.onNodeWithText("Vilão").performScrollTo().performClick()
-        compose.onNodeWithText("Criar personagem").performScrollTo().performClick()
+        compose.onNodeWithText("Criar personagem").performClick()
         compose.mainClock.autoAdvance = false
         compose.onNodeWithText("Rolar D20").performScrollTo().performClick()
         compose.mainClock.advanceTimeBy(1250)

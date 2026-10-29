@@ -10,13 +10,13 @@ data class Attribute(val name: String, val extremes: String? = null)
 
 object CharacterRules {
     val attributes = listOf(
-        Attribute("Inteligência"),
-        Attribute("Dinheiro"),
-        Attribute("Saúde"),
-        Attribute("Beleza"),
-        Attribute("Físico", "0: obeso · 20: corpo escultural"),
-        Attribute("Altura", "0: de fadas até anões · 20: 2,10 m ou mais"),
-        Attribute("Cabelo", "0: careca · 20: cabelos lindos, independentemente do comprimento"),
+        Attribute("Inteligência", "0 -> Pergaminho em branco | 20 -> Biblioteca ambulante"),
+        Attribute("Dinheiro", "0 -> Depois de pagar os boletos | 20 -> Antes de pagar os boletos"),
+        Attribute("Saúde", "0 -> Se levantar a mão DEUS puxa | 20 -> Data de válidade do Mel"),
+        Attribute("Beleza", "0 -> Da medo no espelho | 20 -> Filho do Michael B. Jordan com a Alessandra Negrini"),
+        Attribute("Físico", "0 -> Alvo de Bullying | 20 -> Escultura de Michelangelo"),
+        Attribute("Altura", "0 -> Desde de Fadas Até Anões | 20 -> Minímo 2,10 de altura"),
+        Attribute("Cabelo", "0 -> Só o Couro Cabeçudo | 20 -> Propaganda de Xampu"),
     )
     val groups = listOf(0..3, 4..6)
 }

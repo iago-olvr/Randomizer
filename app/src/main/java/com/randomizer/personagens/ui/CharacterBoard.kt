@@ -26,6 +26,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -41,6 +42,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.KeyboardType
@@ -61,8 +63,12 @@ internal fun CharacterBoard(
     isRolling: Boolean,
     onRoll: () -> Unit,
     onChange: (GameState) -> Unit,
-    onNew: () -> Unit,
+    onCancel: () -> Unit,
     onExport: () -> Unit,
+    characterName: String = "",
+    onEditName: () -> Unit = {},
+    onHistory: () -> Unit = {},
+    resultStatus: @Composable () -> Unit = {},
 ) {
     var detailIndex by rememberSaveable { mutableStateOf<Int?>(null) }
     val fontScale = LocalDensity.current.fontScale.coerceAtLeast(1f)
@@ -70,7 +76,7 @@ internal fun CharacterBoard(
         // Em telas baixas ou com fontes ampliadas, mantém as fileiras e permite rolagem.
         val physicalEntry = game.source == DiceSource.PHYSICAL && game.dieSides > 0
         val extraTileHeight = (((maxWidth - 56.dp) / 4) - 76.dp).coerceAtLeast(0.dp) * 2
-        val minimumHeight = ((if (physicalEntry) 800 else 700) * fontScale).dp + extraTileHeight
+        val minimumHeight = ((if (physicalEntry) 960 else 880) * fontScale).dp + extraTileHeight
         val boardHeight = maxOf(maxHeight, minimumHeight)
         Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
             Column(
@@ -81,16 +87,30 @@ internal fun CharacterBoard(
                     horizontalArrangement = Arrangement.SpaceBetween) {
                     Text(game.mode.displayName, color = MaterialTheme.colorScheme.primary,
                         style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                    TextButton(onClick = onNew, enabled = !isRolling) { Text("Novo personagem") }
+                    OutlinedButton(onClick = onCancel, enabled = !isRolling, shape = CircleShape,
+                        modifier = Modifier.size(52.dp).semantics { contentDescription = "Cancelar" },
+                        contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)) {
+                        Text("X", fontSize = 26.sp)
+                    }
                 }
                 Spacer(Modifier.weight(0.5f))
+                if (characterName.isNotBlank()) {
+                    Text(characterName, style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+                }
+                StageInstruction(game)
+                Spacer(Modifier.height(20.dp))
                 AttributeRow(game, 0, isRolling, onChange) { detailIndex = it }
                 Spacer(Modifier.height(24.dp))
                 Spacer(Modifier.weight(1f))
                 AttributeRow(game, 1, isRolling, onChange) { detailIndex = it }
                 Spacer(Modifier.height(24.dp))
                 Spacer(Modifier.weight(1f))
-                BoardAction(game, isRolling, onRoll, onChange, onExport)
+                BoardAction(game, isRolling, onRoll, onChange)
+                if (game.stage == Stage.COMPLETE) {
+                    ResultActions(!isRolling, onEditName, onExport, onHistory)
+                    resultStatus()
+                }
             }
         }
     }
@@ -163,9 +183,14 @@ private fun AttributeRow(
                         }
                         Text(attribute.name, textAlign = TextAlign.Center,
                             style = MaterialTheme.typography.labelMedium)
-                        if (group == 1) {
-                            Text("ⓘ", color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                style = MaterialTheme.typography.labelSmall)
+                        if (attribute.extremes != null) {
+                            OutlinedButton(onClick = { onDetails(index) }, enabled = !isRolling,
+                                shape = CircleShape,
+                                modifier = Modifier.size(48.dp).testTag("hint-$index")
+                                    .semantics { contentDescription = "Ver dica de ${attribute.name}" },
+                                contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)) {
+                                Text("?", fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                            }
                         }
                     }
                 }
@@ -175,20 +200,15 @@ private fun AttributeRow(
 }
 
 @Composable
-private fun BoardAction(
-    game: GameState,
-    isRolling: Boolean,
-    onRoll: () -> Unit,
-    onChange: (GameState) -> Unit,
-    onExport: () -> Unit,
-) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally,
+private fun StageInstruction(game: GameState) {
+    Column(Modifier.fillMaxWidth().testTag("stage-instruction"),
+        horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(10.dp)) {
         val instruction = when (game.stage) {
             Stage.CHOOSE_MAXIMUM -> "Toque em um atributo do grupo ${game.group + 1} para receber 20"
             Stage.ROLL_MINIMUM -> "Qual atributo receberá 0?"
             Stage.ROLL_ATTRIBUTE -> "D20 para ${CharacterRules.attributes[game.remaining.first()].name}"
-            Stage.COMPLETE -> "Quem é esse personagem?"
+            Stage.COMPLETE -> "Imaginem juntos a personalidade e a história desse personagem."
         }
         Surface(
             modifier = Modifier.fillMaxWidth().manuscriptFrame(),
@@ -213,16 +233,25 @@ private fun BoardAction(
             }
             Text(mapping, textAlign = TextAlign.Center, style = MaterialTheme.typography.bodySmall)
         }
-        if (game.lastEvent.isNotBlank()) {
+    }
+}
+
+@Composable
+private fun BoardAction(
+    game: GameState,
+    isRolling: Boolean,
+    onRoll: () -> Unit,
+    onChange: (GameState) -> Unit,
+) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        if (game.stage != Stage.COMPLETE && game.lastEvent.isNotBlank()) {
             Text(game.lastEvent, Modifier.semantics { liveRegion = LiveRegionMode.Polite },
                 textAlign = TextAlign.Center, style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.primary)
         }
-        if (game.stage == Stage.COMPLETE) {
-            Text("Imaginem juntos a personalidade e a história desse personagem.",
-                textAlign = TextAlign.Center, style = MaterialTheme.typography.bodySmall)
-            CircularAction(if (isRolling) "Salvando…" else "Exportar", !isRolling, onExport)
-        } else if (game.source == DiceSource.PHYSICAL && game.dieSides > 0) {
+        if (game.stage == Stage.COMPLETE) return@Column
+        if (game.source == DiceSource.PHYSICAL && game.dieSides > 0) {
             PhysicalResultInput(game, onChange)
         } else {
             CircularAction(
@@ -231,6 +260,21 @@ private fun BoardAction(
                 onClick = onRoll,
             )
         }
+    }
+}
+
+@Composable
+private fun ResultActions(enabled: Boolean, onEditName: () -> Unit, onShare: () -> Unit, onHistory: () -> Unit) {
+    Row(Modifier.fillMaxWidth().testTag("result-actions"),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        listOf("Editar nome" to onEditName, "Compartilhar" to onShare, "Ver histórico" to onHistory)
+            .forEach { (label, action) ->
+                Button(onClick = action, enabled = enabled,
+                    modifier = Modifier.weight(1f).manuscriptFrame(),
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp, vertical = 12.dp)) {
+                    Text(label, textAlign = TextAlign.Center, style = MaterialTheme.typography.labelMedium)
+                }
+            }
     }
 }
 

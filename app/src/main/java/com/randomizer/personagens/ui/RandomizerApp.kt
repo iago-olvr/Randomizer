@@ -1,9 +1,14 @@
 package com.randomizer.personagens.ui
 
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import android.content.ActivityNotFoundException
+import android.content.Intent
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.runtime.LaunchedEffect
+import com.randomizer.personagens.history.CharacterHistory
+import com.randomizer.personagens.history.SavedCharacter
+import com.randomizer.personagens.export.CharacterSharing
+import java.io.File
+import java.util.UUID
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -20,12 +25,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
@@ -47,26 +50,22 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.clearAndSetSemantics
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.randomizer.personagens.game.CharacterGenerator
 import com.randomizer.personagens.game.CreationMode
 import com.randomizer.personagens.game.DiceSource
 import com.randomizer.personagens.game.GameState
 import com.randomizer.personagens.game.Stage
 import com.randomizer.personagens.game.displayName
-import com.randomizer.personagens.export.CharacterImageExporter
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.IOException
 import kotlin.random.Random
 
-private enum class AppPage { SETUP, BOARD, RESULT }
-private data class PageSnapshot(val page: AppPage, val game: GameState)
+private enum class AppPage { SETUP, BOARD, RESULT, HISTORY, HELP }
+private data class PageSnapshot(val page: AppPage, val game: GameState, val name: String)
 
 private val GameStateSaver = listSaver<GameState, String>(
     save = { state ->
@@ -97,38 +96,77 @@ fun RandomizerApp() {
     // O resultado é sorteado uma vez e só aplicado após a revelação do dado.
     // Salvar o valor evita sortear outro resultado se a tela for recriada.
     var rollingResult by rememberSaveable { mutableStateOf<Int?>(null) }
-    var exportSnapshot by rememberSaveable(stateSaver = GameStateSaver) { mutableStateOf(game) }
     var exporting by remember { mutableStateOf(false) }
+    var deletingHistory by remember { mutableStateOf(false) }
     var exportMessage by rememberSaveable { mutableStateOf<String?>(null) }
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("image/png")) { uri ->
-        if (uri == null) {
-            exporting = false
-        } else {
-            val snapshot = exportSnapshot
-            exporting = true
-            scope.launch {
-                try {
-                    withContext(Dispatchers.IO) {
-                        val output = context.contentResolver.openOutputStream(uri, "w")
-                            ?: throw IOException("Não foi possível abrir o destino.")
-                        output.use { CharacterImageExporter.writePng(snapshot, it) }
-                    }
-                    exportMessage = "Imagem salva no local escolhido."
-                } catch (cancelled: CancellationException) {
-                    throw cancelled
-                } catch (_: Exception) {
-                    exportMessage = "Não foi possível salvar a imagem. Escolha outro local e tente novamente."
-                } finally {
-                    exporting = false
-                }
+    val history = remember(context) { CharacterHistory(File(context.filesDir, "characters.json")) }
+    var characters by remember { mutableStateOf<List<SavedCharacter>>(emptyList()) }
+    var showHistory by rememberSaveable { mutableStateOf(false) }
+    var showHelp by rememberSaveable { mutableStateOf(false) }
+    var characterId by rememberSaveable { mutableStateOf(UUID.randomUUID().toString()) }
+    var createdAt by rememberSaveable { mutableStateOf(System.currentTimeMillis()) }
+    var characterName by rememberSaveable { mutableStateOf("") }
+    var editingName by rememberSaveable { mutableStateOf(false) }
+    var nameDraft by rememberSaveable { mutableStateOf("") }
+    var savingHistory by remember { mutableStateOf(false) }
+    var historySaved by remember { mutableStateOf(false) }
+    var saveAttempt by remember { mutableStateOf(0) }
+    LaunchedEffect(showHistory) {
+        try {
+            characters = withContext(Dispatchers.IO) { history.load() }
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (_: Exception) {
+            exportMessage = "Não foi possível ler o histórico local. Os dados existentes foram preservados."
+        }
+    }
+    LaunchedEffect(started, game, characterId, characterName, saveAttempt) {
+        historySaved = false
+        if (started && game.stage == Stage.COMPLETE) {
+            savingHistory = true
+            try {
+                val saved = SavedCharacter(characterId, createdAt, characterName, game)
+                characters = withContext(Dispatchers.IO) { history.save(saved) }
+                historySaved = true
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                exportMessage = "Não foi possível salvar no histórico. Tente novamente antes de sair."
+            } finally {
+                savingHistory = false
             }
         }
     }
-
-    BackHandler(enabled = started && rollingResult == null && !exporting) { confirmReset = true }
+    fun shareCharacter(sharedGame: GameState, sharedName: String) {
+        if (exporting || deletingHistory || savingHistory) return
+        exporting = true
+        scope.launch {
+            try {
+                val intent = withContext(Dispatchers.IO) {
+                    CharacterSharing.prepare(context, sharedGame, sharedName)
+                }
+                context.startActivity(Intent.createChooser(intent, "Compartilhar personagem"))
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                exportMessage = "Não foi possível compartilhar a imagem. Tente novamente."
+            } finally {
+                exporting = false
+            }
+        }
+    }
+    BackHandler(enabled = showHelp || showHistory || started) {
+        if (rollingResult != null || exporting || savingHistory || deletingHistory) return@BackHandler
+        if (showHelp) showHelp = false
+        else if (showHistory) showHistory = false
+        else if (game.stage == Stage.COMPLETE && historySaved) started = false
+        else confirmReset = true
+    }
     val currentPage = when {
+        showHelp -> AppPage.HELP
+        showHistory -> AppPage.HISTORY
         !started -> AppPage.SETUP
         game.stage == Stage.COMPLETE -> AppPage.RESULT
         else -> AppPage.BOARD
@@ -138,7 +176,7 @@ fun RandomizerApp() {
         Scaffold { insets ->
             MedievalBackdrop {
                 AnimatedContent(
-                    targetState = PageSnapshot(currentPage, game),
+                    targetState = PageSnapshot(currentPage, game, characterName),
                     contentKey = { it.page },
                     modifier = Modifier.fillMaxSize().padding(insets).imePadding().clipToBounds(),
                     transitionSpec = {
@@ -152,51 +190,91 @@ fun RandomizerApp() {
                     Box(Modifier.fillMaxSize().testTag("page-${snapshot.page.name.lowercase()}")
                         .then(if (activePage) Modifier else Modifier.clearAndSetSemantics {}),
                         contentAlignment = Alignment.TopCenter) {
-                        if (snapshot.page != AppPage.SETUP) {
+                        if (snapshot.page == AppPage.HELP) {
+                            HelpScreen(onBack = { showHelp = false }, enabled = activePage)
+                        } else if (snapshot.page == AppPage.HISTORY) {
+                            HistoryScreen(characters,
+                                enabled = activePage && !exporting && !savingHistory && !deletingHistory,
+                                onBack = { showHistory = false },
+                                onOpen = { saved ->
+                                    characterId = saved.id
+                                    createdAt = saved.createdAt
+                                    characterName = saved.name
+                                    game = saved.game
+                                    started = true
+                                    showHistory = false
+                                },
+                                onShare = { saved -> shareCharacter(saved.game, saved.name) },
+                                onDelete = { saved ->
+                                    if (!deletingHistory && !exporting && !savingHistory) {
+                                        deletingHistory = true
+                                        scope.launch {
+                                            try {
+                                                val remaining = withContext(Dispatchers.IO) { history.delete(saved.id) }
+                                                // A ficha aberta não deve recriar automaticamente um registro excluído.
+                                                if (started && characterId == saved.id) started = false
+                                                characters = remaining
+                                            } catch (cancelled: CancellationException) {
+                                                throw cancelled
+                                            } catch (_: Exception) {
+                                                exportMessage = "Não foi possível excluir o personagem. O registro foi preservado. Tente novamente."
+                                            } finally {
+                                                deletingHistory = false
+                                            }
+                                        }
+                                    }
+                                },
+                            )
+                        } else if (snapshot.page != AppPage.SETUP) {
                             CharacterBoard(
                                 game = snapshot.game,
-                                isRolling = rollingResult != null || exporting || !activePage,
+                                isRolling = rollingResult != null || exporting || savingHistory || !activePage,
                                 onRoll = {
                                     if (rollingResult == null) {
                                         rollingResult = Random.nextInt(1, game.dieSides + 1)
                                     }
                                 },
                                 onChange = { if (activePage) game = it },
-                                onNew = {
-                                    if (game.stage == Stage.COMPLETE) started = false else confirmReset = true
+                                onCancel = {
+                                    started = false
+                                    confirmReset = false
                                 },
-                                onExport = {
-                                    if (!exporting && game.stage == Stage.COMPLETE) {
-                                        exportSnapshot = game
-                                        exporting = true
-                                        try {
-                                            val name = if (game.mode == CreationMode.VILLAIN) "vilao" else "personagem"
-                                            exportLauncher.launch("randomizer-$name-${System.currentTimeMillis()}.png")
-                                        } catch (_: ActivityNotFoundException) {
-                                            exporting = false
-                                            exportMessage = "Não foi encontrado um aplicativo para escolher onde salvar a imagem."
-                                        }
-                                    }
+                                onExport = { shareCharacter(game, characterName) },
+                                characterName = snapshot.name,
+                                onEditName = {
+                                    nameDraft = characterName
+                                    editingName = true
+                                },
+                                onHistory = { if (historySaved) showHistory = true else saveAttempt++ },
+                                resultStatus = {
+                                    HistorySaveStatus(savingHistory, historySaved)
                                 },
                             )
                         } else {
-                            Column(
-                                modifier = Modifier.widthIn(max = 640.dp).fillMaxWidth()
-                                    .verticalScroll(rememberScrollState()).padding(20.dp),
-                                verticalArrangement = Arrangement.spacedBy(16.dp),
-                            ) {
-                                Text("RANDOMIZER", color = MaterialTheme.colorScheme.primary,
-                                    style = MaterialTheme.typography.labelLarge, letterSpacing = 3.sp)
-                                HeraldicCrest(Modifier.align(Alignment.CenterHorizontally))
-                                Text("Um personagem.\nMuitas histórias.",
-                                    style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
-                                HeraldicDivider()
-                                SetupScreen(mode, source, { mode = it }, { source = it }, activePage) {
-                                    if (!started) {
-                                        game = CharacterGenerator.start(mode, source)
-                                        started = true
-                                    }
+                            Column(Modifier.widthIn(max = 640.dp).fillMaxSize()) {
+                                Column(
+                                    modifier = Modifier.weight(1f).fillMaxWidth()
+                                        .verticalScroll(rememberScrollState()).padding(20.dp),
+                                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                                ) {
+                                    HeraldicCrest(Modifier.align(Alignment.CenterHorizontally))
+                                    HomeHeading()
+                                    HeraldicDivider()
+                                    SetupScreen(mode, source, { mode = it }, { source = it }, activePage)
                                 }
+                                HomeActions(enabled = activePage,
+                                    onHelp = { showHelp = true },
+                                    onStart = {
+                                        if (!started) {
+                                            characterId = UUID.randomUUID().toString()
+                                            createdAt = System.currentTimeMillis()
+                                            characterName = ""
+                                            game = CharacterGenerator.start(mode, source)
+                                            started = true
+                                        }
+                                    },
+                                    onHistory = { showHistory = true },
+                                )
                             }
                         }
                     }
@@ -208,6 +286,23 @@ fun RandomizerApp() {
                 game = CharacterGenerator.roll(game) { result }
                 rollingResult = null
             }
+        }
+        if (editingName) {
+            AlertDialog(
+                onDismissRequest = { editingName = false },
+                title = { Text("Nome do personagem") },
+                text = {
+                    OutlinedTextField(value = nameDraft,
+                        onValueChange = { if (it.length <= 60) nameDraft = it },
+                        label = { Text("Nome (opcional)") }, singleLine = true,
+                        supportingText = { Text("Até 60 caracteres. Aparece também na imagem.") })
+                },
+                confirmButton = { TextButton(onClick = {
+                    characterName = nameDraft.trim()
+                    editingName = false
+                }) { Text("Salvar nome") } },
+                dismissButton = { TextButton(onClick = { editingName = false }) { Text("Cancelar") } },
+            )
         }
         if (confirmReset) {
             AlertDialog(
@@ -225,9 +320,15 @@ fun RandomizerApp() {
         exportMessage?.let { message ->
             AlertDialog(
                 onDismissRequest = { exportMessage = null },
-                title = { Text("Exportação") },
+                title = { Text("Personagem") },
                 text = { Text(message) },
-                confirmButton = { TextButton(onClick = { exportMessage = null }) { Text("Entendi") } },
+                confirmButton = {
+                    val retry = started && game.stage == Stage.COMPLETE && !historySaved
+                    TextButton(onClick = {
+                        exportMessage = null
+                        if (retry) saveAttempt++
+                    }) { Text(if (retry) "Tentar salvar novamente" else "Entendi") }
+                },
             )
         }
     }
@@ -240,11 +341,8 @@ private fun SetupScreen(
     onMode: (CreationMode) -> Unit,
     onSource: (DiceSource) -> Unit,
     enabled: Boolean,
-    onStart: () -> Unit,
 ) {
-    Text("Use os dados para descobrir os atributos. Depois, dê vida ao resultado.",
-        color = MaterialTheme.colorScheme.onSurfaceVariant)
-    Text("Como criar?", style = MaterialTheme.typography.titleMedium)
+    Text("Tipo de Personagem", style = MaterialTheme.typography.titleMedium)
     ChoiceCard(CreationMode.EXTREMES.displayName, "Escolha um 20 em cada grupo. O D4 define um 0 e o D20 preenche os demais.",
         mode == CreationMode.EXTREMES, enabled) { onMode(CreationMode.EXTREMES) }
     ChoiceCard("Vilão", "Tudo ao acaso: um D20 para cada um dos sete atributos.",
@@ -256,10 +354,7 @@ private fun SetupScreen(
     ChoiceCard("Dados físicos", "Lance seus dados e digite o resultado de cada rolagem.", source == DiceSource.PHYSICAL, enabled) {
         onSource(DiceSource.PHYSICAL)
     }
-    Button(onClick = onStart, enabled = enabled, shape = MaterialTheme.shapes.medium,
-        modifier = Modifier.fillMaxWidth().sizeIn(minHeight = 52.dp).manuscriptFrame()) {
-        Text("Criar personagem")
-    }
+
 }
 
 @Composable

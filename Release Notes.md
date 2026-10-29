@@ -31,7 +31,7 @@ Os atributos do primeiro grupo mostram apenas seus valores. No segundo grupo, as
 
 | Atributo | Valor 0 | Valor 20 |
 | --- | --- | --- |
-| Físico | Obeso | Corpo escultural |
+| Físico | Fora de Forma | Corpo escultural |
 | Altura | De fadas até anões | 2,10 m ou mais |
 | Cabelo | Careca | Cabelos lindos, independentemente do comprimento |
 

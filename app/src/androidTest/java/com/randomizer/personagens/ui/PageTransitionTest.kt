@@ -4,6 +4,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -16,21 +17,20 @@ class PageTransitionTest {
     val compose = createComposeRule()
 
     @Test
-    fun podeEntrarNoTabuleiroEVoltarParaConfiguracao() {
+    fun cancelarPeloXVoltaDiretamenteParaConfiguracao() {
         compose.setContent { RandomizerApp() }
         compose.onNodeWithText("Vilão").performScrollTo().performClick()
         compose.mainClock.autoAdvance = false
-        compose.onNodeWithText("Criar personagem").performScrollTo().performClick()
+        compose.onNodeWithText("Criar personagem").performClick()
         compose.mainClock.advanceTimeBy(64)
         compose.onNodeWithTag("page-board").assertExists()
         compose.mainClock.advanceTimeBy(500)
         compose.onNodeWithTag("page-setup").assertDoesNotExist()
-        compose.onNodeWithText("Novo personagem").performScrollTo().performClick()
-        compose.mainClock.advanceTimeByFrame()
-        compose.onNodeWithText("Recomeçar").performClick()
+        compose.onNodeWithContentDescription("Cancelar").performScrollTo().performClick()
         compose.mainClock.advanceTimeBy(500)
+        compose.onNodeWithText("Recomeçar").assertDoesNotExist()
         compose.onNodeWithTag("page-board").assertDoesNotExist()
-        compose.onNodeWithText("Criar personagem").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Criar personagem").assertIsDisplayed()
     }
 
     @Test
@@ -39,7 +39,7 @@ class PageTransitionTest {
         restoration.setContent { RandomizerApp() }
         compose.onNodeWithText("Vilão").performScrollTo().performClick()
         compose.mainClock.autoAdvance = false
-        compose.onNodeWithText("Criar personagem").performScrollTo().performClick()
+        compose.onNodeWithText("Criar personagem").performClick()
         compose.mainClock.advanceTimeBy(64)
         restoration.emulateSavedInstanceStateRestore()
         compose.mainClock.advanceTimeBy(500)
@@ -53,7 +53,7 @@ class PageTransitionTest {
         compose.setContent { RandomizerApp() }
         compose.onNodeWithText("Vilão").performScrollTo().performClick()
         compose.onNodeWithText("Dados físicos").performScrollTo().performClick()
-        compose.onNodeWithText("Criar personagem").performScrollTo().performClick()
+        compose.onNodeWithText("Criar personagem").performClick()
         for (result in 1..7) {
             compose.onNodeWithText("Resultado do D20").performScrollTo().performTextInput(result.toString())
             if (result == 7) compose.mainClock.autoAdvance = false
@@ -62,7 +62,7 @@ class PageTransitionTest {
         compose.mainClock.advanceTimeBy(500)
         compose.onNodeWithTag("page-board").assertDoesNotExist()
         compose.onNodeWithTag("page-result").assertExists()
-        compose.onNodeWithText("Exportar").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Compartilhar").performScrollTo().assertIsDisplayed()
         for (value in 1..7) {
             compose.onNodeWithText(value.toString(), useUnmergedTree = true).performScrollTo().assertIsDisplayed()
         }

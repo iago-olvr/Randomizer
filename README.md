@@ -12,25 +12,33 @@ Aplicativo Android em português para criar combinações de sete atributos. Uma
 - Animação dos D4 e D20 digitais, com giro, salto e alternância de números antes de revelar o resultado.
 - Tabuleiro com quatro cartões quadrados na primeira fileira e três na segunda, com o botão circular de rolagem centralizado na parte inferior.
 - Toque no cartão do grupo ativo para escolher o atributo máximo. O próximo atributo a receber D20 aparece destacado.
-- Toque em Físico, Altura ou Cabelo para consultar as referências dos extremos, quando o cartão não estiver sendo usado para escolher o máximo.
+- Botão **?** de 48 dp em cada um dos sete atributos, para consultar as dicas mesmo durante a escolha do máximo.
 - Resultado final para interpretação pelos jogadores.
-- Cabeçalho simplificado com o modo atual e instruções destacadas acima do botão principal.
-- Exportação do resultado em PNG, com os sete atributos e seus valores nas duas fileiras.
+- Instruções da etapa atual destacadas acima dos atributos; a última rolagem deixa de aparecer no resultado final.
+- Rodapé inicial sem painel de fundo, com ajuda (**?**), criação (**+**, em destaque) e histórico; a ajuda detalha modos, dados e regras.
+- Resultado com três botões lado a lado: **Editar nome**, **Compartilhar** e **Ver histórico**.
+- Compartilhamento do resultado em PNG, com nome opcional e os sete atributos nas duas fileiras.
+- Histórico local dos personagens concluídos, com data de criação e reabertura do resultado.
+- No histórico, deslize para a direita para compartilhar a imagem ou para a esquerda para excluir; os botões com setas também executam essas ações.
 - Progresso preservado durante rotação e restauração da tela pelo Android.
-- Confirmação antes de descartar um personagem em andamento.
+- O botão X cancela diretamente a criação; o comando Voltar do Android mantém a confirmação para descartar uma ficha incompleta.
 - Funciona offline, sem conta, servidor, banco de dados ou permissão de internet.
 
 ## Regras
 
-**Grupo 1:** Inteligência, Dinheiro, Saúde e Beleza. Exibem somente os valores.
+**Grupo 1:** Inteligência, Dinheiro, Saúde e Beleza.
 
-**Grupo 2:** Físico, Altura e Cabelo. As referências exibidas são:
+**Grupo 2:** Físico, Altura e Cabelo. Todos os atributos têm dicas acessíveis pelo botão **?**:
 
 | Atributo | 0 | 20 |
 | --- | --- | --- |
-| Físico | Obeso | Corpo escultural |
-| Altura | De fadas até anões | 2,10 m ou mais |
-| Cabelo | Careca | Cabelos lindos, independentemente do comprimento |
+| Inteligência | Pergaminho em branco | Biblioteca ambulante |
+| Dinheiro | Depois de pagar os boletos | Antes de pagar os boletos |
+| Saúde | Se levantar a mão DEUS puxa | Data de válidade do Mel |
+| Beleza | Da medo no espelho | Filho do Michael B. Jordan com a Alessandra Negrini |
+| Físico | Alvo de Bullying | Escultura de Michelangelo |
+| Altura | Desde de Fadas Até Anões | Minímo 2,10 de altura |
+| Cabelo | Só o Couro Cabeçudo | Propaganda de Xampu |
 
 ### Vilão
 
@@ -57,16 +65,24 @@ Os D20 podem produzir 20, mesmo quando outro atributo já foi maximizado. O zero
 
 Cada rolagem digital anima o D4 ou D20 por aproximadamente 1,1 segundo e exibe o resultado por mais 0,65 segundo antes de preencher o atributo. Durante esse período, novas ações ficam bloqueadas. Recriar a tela retoma a apresentação do mesmo resultado, sem sortear novamente. Os números intermediários são apenas visuais.
 
-## Exportar o resultado
+## Finalizar, nomear e compartilhar
 
 1. Complete os sete atributos, usando dados digitais ou físicos.
-2. O botão circular muda para **Exportar**.
-3. Toque nele e escolha uma pasta no seletor de arquivos do Android, por exemplo **Downloads**.
-4. Confirme o nome do arquivo para salvar a imagem **PNG de 1080 × 1280 pixels**.
+2. O personagem é salvo automaticamente no histórico local, mesmo sem nome.
+3. Se quiser, toque em **Editar nome** e depois em **Salvar nome**. O nome é opcional, pode ter até 60 caracteres e pode ser editado mais tarde.
+4. Toque em **Compartilhar** para escolher um aplicativo no painel do Android. A imagem é um **PNG de 1080 × 1280 pixels**, incluindo o nome informado.
 
-A imagem contém o modo (Vilão ou Personagem), os nomes e os valores dos atributos, com o mesmo estilo de pergaminho da interface. Ela não depende do tamanho da tela nem da posição da rolagem. O aplicativo informa se a gravação foi concluída ou falhou. Cancelar ou salvar não descarta o personagem, e é possível tentar novamente. Para iniciar outro, use **Novo personagem** no topo.
+A imagem contém o modo (Vilão ou Personagem), o nome opcional e os valores dos atributos, com o mesmo estilo de pergaminho da interface. Ela não depende do tamanho da tela nem da posição da rolagem. Cancelar o compartilhamento não descarta o personagem, e é possível tentar novamente. O botão **X / Cancelar**, no canto superior direito da ficha, retorna diretamente à tela inicial e descarta uma criação incompleta. Personagens já salvos permanecem no histórico. Para iniciar outra criação, use o botão **+** maior da tela inicial.
 
-A exportação para uma pasta local funciona offline e não pede permissão de acesso geral aos arquivos. A janela de salvamento pode oferecer também provedores de nuvem, conforme os aplicativos instalados no aparelho.
+O painel de compartilhamento oferece os aplicativos instalados no aparelho. Não há botão separado para salvar PNG no resultado.
+
+O histórico pode ser aberto na tela inicial em **Histótico**, ou no resultado em **Ver histórico**. Toque em um registro para reabrir seus atributos, editar o nome ou compartilhar novamente. Os registros aparecem do mais recente para o mais antigo; editar o nome atualiza o mesmo registro.
+
+Em cada item, deslizar da esquerda para a direita compartilha a imagem sem remover o personagem. Deslizar da direita para a esquerda exclui somente aquele registro, sem confirmação adicional. Os botões **Compartilhar →** e **← Excluir** indicam as direções e permitem executar as ações por toque. Se a exclusão falhar, o app informa o erro e mantém o registro. Excluir uma ficha que estava aberta também encerra sua visualização para que ela não seja recriada automaticamente.
+
+Os dados ficam em um arquivo privado do app, sem banco de dados ou servidor. Fechar o aplicativo preserva o histórico; desinstalar ou limpar os dados do app o remove. O compartilhamento concede acesso temporário somente à imagem escolhida. O envio pode depender de internet conforme o aplicativo de destino.
+
+Para consultar as regras, toque em **? / Como jogar** no rodapé inicial. A ajuda explica o D4 de cada grupo, os dois modos, os dados físicos e digitais, as referências dos atributos e o uso do histórico. Os botões de voltar são setas para a esquerda (**←**), com descrição acessível. Voltar da ajuda mantém as opções escolhidas.
 
 ## Abrir e executar
 
@@ -107,8 +123,13 @@ app/src/main/java/com/randomizer/personagens/
   game/Game.kt          Atributos, estado e regras, sem dependência do Android
   game/CharacterSummary.kt Dados completos para exportação e nomes dos modos
   export/CharacterImageExporter.kt Geração do PNG
+  export/CharacterSharing.kt Compartilhamento por URI temporária
+  history/CharacterHistory.kt Histórico privado com escrita atômica
   ui/RandomizerApp.kt   Configuração, etapas guiadas e resultado
   ui/CharacterBoard.kt Tabuleiro de atributos e ação de rolagem
+  ui/HomeActions.kt    Rodapé inicial com ajuda, criação e histórico
+  ui/HelpScreen.kt     Explicação detalhada dos modos e das regras
+  ui/HistoryScreen.kt  Histórico com gestos e botões de compartilhar e excluir
   ui/DiceRollDialog.kt  Animação e revelação dos dados digitais
   ui/Theme.kt           Cores e tema
   ui/MedievalDecoration.kt Textura vetorial, brasão, molduras e ornamentos
@@ -123,20 +144,20 @@ As transições de página duram aproximadamente 380 ms e respeitam a escala de 
 
 ## Validação desta entrega
 
-- **13 testes de regras e dados de exportação passaram** com `testDebugUnitTest` no projeto Android.
+- **15 testes unitários passaram** com `testDebugUnitTest`, incluindo regras, dados de exportação e validação dos registros do histórico.
 - `lintDebug`, `assembleDebug` e `assembleDebugAndroidTest` concluídos com sucesso com o tema medieval e as transições de página.
 - XMLs conferidos e disponibilidade das dependências principais verificada.
 - Gradle Wrapper conferido pelo SHA256 oficial; o hash da distribuição está fixado nas propriedades do Wrapper.
-- Os 14 testes Android incluem entrada física, restauração de estado, animação, disposição dos cartões, maximização por toque, cabeçalho simplificado, exportação PNG e transições entre páginas. Foram compilados, mas sua execução no dispositivo permanece pendente.
+- Os 24 testes Android incluem entrada física, restauração de estado, animação, disposição dos cartões, maximização por toque, instruções acima dos atributos, três ações no resultado, sete dicas, ajuda, rodapé inicial, exportação PNG, transições entre páginas, persistência e exclusão do histórico, gestos, nome e compartilhamento. Foram compilados, mas sua execução no dispositivo permanece pendente.
 - A execução dos testes de interface precisa de um aparelho ou emulador acessível pelo ADB. No ambiente de execução automatizada desta alteração, o ADB encontrou uma restrição de permissão ao acessar sua pasta de preferências.
 
 A pasta local `.tools/` contém as ferramentas temporárias e o relatório dessa validação JVM. Ela é ignorada pelo Git e não faz parte do aplicativo.
 
 ## Limitações da primeira versão
 
-- Um personagem por vez, sem histórico interno; o resultado pode ser salvo como PNG.
-- Não gera nome, texto de personalidade ou interpretação automática.
-- O estado salvo pelo Android não substitui um histórico permanente: encerrar a tarefa ou limpar os dados pode descartá-lo.
+- Não gera nome, texto de personalidade ou interpretação automática; o nome é informado pela pessoa.
+- O histórico é apenas local, sem sincronização ou recuperação após desinstalação ou limpeza dos dados.
+- Personagens que ficaram incompletos não entram no histórico.
 
 ## Ferramentas
 
