@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
@@ -47,13 +48,24 @@ import kotlin.math.sin
 internal fun DiceRollDialog(sides: Int, result: Int, onFinished: () -> Unit) {
     val progress = remember { Animatable(0f) }
     var revealed by remember { mutableStateOf(false) }
+    val critical = sides == 20 && result == 20
+    val emphasis = remember { Animatable(0f) }
     val finish by rememberUpdatedState(onFinished)
 
     LaunchedEffect(sides, result) {
+        revealed = false
+        progress.snapTo(0f)
         progress.animateTo(1f, tween(durationMillis = 1100, easing = FastOutSlowInEasing))
         revealed = true
-        delay(650)
+        delay(if (critical) 1500 else 650)
         finish()
+    }
+    LaunchedEffect(revealed, critical) {
+        emphasis.snapTo(0f)
+        if (revealed && critical) {
+            emphasis.animateTo(1f, tween(350))
+            emphasis.animateTo(0f, tween(650))
+        }
     }
 
     Dialog(
@@ -61,14 +73,16 @@ internal fun DiceRollDialog(sides: Int, result: Int, onFinished: () -> Unit) {
         properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false),
     ) {
         Surface(shape = MaterialTheme.shapes.extraLarge, tonalElevation = 8.dp,
-            border = BorderStroke(2.dp, MaterialTheme.colorScheme.outline),
+            border = BorderStroke(if (revealed && critical) 3.dp else 2.dp,
+                if (revealed && critical) AttributeGold else MaterialTheme.colorScheme.outline),
             modifier = Modifier.manuscriptFrame()) {
             Column(
                 modifier = Modifier.fillMaxWidth().padding(28.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(20.dp),
             ) {
-                Text(if (revealed) "Resultado do D$sides" else "Rolando D$sides…",
+                Text(if (revealed && critical) "Sucesso crítico!"
+                    else if (revealed) "Resultado do D$sides" else "Rolando D$sides…",
                     style = MaterialTheme.typography.titleLarge)
                 Box(
                     modifier = Modifier.size(200.dp).clearAndSetSemantics {
@@ -85,13 +99,13 @@ internal fun DiceRollDialog(sides: Int, result: Int, onFinished: () -> Unit) {
                             rotationZ = 720f * fraction
                             rotationY = wobble * 30f
                             translationY = -abs(wobble) * 26.dp.toPx()
-                            scaleX = 0.85f + fraction * 0.15f
+                            scaleX = (0.85f + fraction * 0.15f) * (1f + emphasis.value * .12f)
                             scaleY = scaleX
                             cameraDistance = 12f * density
                         },
                         contentAlignment = Alignment.Center,
                     ) {
-                        DieFace(sides)
+                        DieFace(sides, revealed && critical)
                         Text(
                             value.toString(),
                             modifier = Modifier.padding(top = if (sides == 4) 22.dp else 0.dp),
@@ -100,8 +114,10 @@ internal fun DiceRollDialog(sides: Int, result: Int, onFinished: () -> Unit) {
                             fontWeight = FontWeight.Black,
                         )
                     }
+                    if (revealed && critical) CriticalSuccessEffect(Modifier.fillMaxSize())
                 }
-                Text(if (revealed) "O destino escolheu: $result" else "Que história vem por aí?",
+                Text(if (revealed && critical) "D20: 20 — um resultado lendário!"
+                    else if (revealed) "O destino escolheu: $result" else "Que história vem por aí?",
                     color = MaterialTheme.colorScheme.primary,
                     style = MaterialTheme.typography.bodyLarge)
             }
@@ -110,9 +126,9 @@ internal fun DiceRollDialog(sides: Int, result: Int, onFinished: () -> Unit) {
 }
 
 @Composable
-private fun DieFace(sides: Int) {
+private fun DieFace(sides: Int, critical: Boolean) {
     val gold = MaterialTheme.colorScheme.primary
-    val edge = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.45f)
+    val edge = if (critical) AttributeGold else MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.45f)
     Canvas(Modifier.size(156.dp)) {
         val w = size.width
         val h = size.height

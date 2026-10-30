@@ -22,6 +22,11 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.material3.AlertDialog
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -38,19 +43,35 @@ internal fun HistoryScreen(
     onBack: () -> Unit, onOpen: (SavedCharacter) -> Unit,
     onShare: (SavedCharacter) -> Unit, onDelete: (SavedCharacter) -> Unit,
 ) {
-    Column(Modifier.widthIn(max = 640.dp).fillMaxWidth()
-        .verticalScroll(rememberScrollState()).padding(20.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text("Histórico de personagens", style = MaterialTheme.typography.headlineMedium)
-        BackButton(onClick = onBack, enabled = enabled)
-        Text("Deslize para a direita para compartilhar ou para a esquerda para excluir.",
-            style = MaterialTheme.typography.bodyMedium)
-        if (characters.isEmpty()) Text("Nenhum personagem salvo ainda.")
-        characters.forEach { saved ->
-            key(saved.id) {
-                HistoryItem(saved, enabled, { onOpen(saved) }, { onShare(saved) }, { onDelete(saved) })
+    var pendingDeleteId by rememberSaveable { mutableStateOf<String?>(null) }
+    Column(Modifier.widthIn(max = 640.dp).fillMaxSize()) {
+        Column(Modifier.weight(1f).fillMaxWidth()
+            .testTag("history-content").verticalScroll(rememberScrollState()).padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text("Histórico de personagens", style = MaterialTheme.typography.headlineMedium)
+            Text("Deslize para a direita para compartilhar ou para a esquerda para excluir.",
+                style = MaterialTheme.typography.bodyMedium)
+            if (characters.isEmpty()) Text("Nenhum personagem salvo ainda.")
+            characters.forEach { saved ->
+                key(saved.id) {
+                    HistoryItem(saved, enabled && pendingDeleteId == null,
+                        { onOpen(saved) }, { onShare(saved) }, { pendingDeleteId = saved.id })
+                }
             }
         }
+        FixedFooter("history-footer") { BackButton(onClick = onBack, enabled = enabled) }
+    }
+    characters.firstOrNull { it.id == pendingDeleteId }?.let { saved ->
+        AlertDialog(
+            onDismissRequest = { pendingDeleteId = null },
+            title = { Text("Excluir personagem?") },
+            text = { Text("Excluir ${saved.name.ifBlank { saved.game.mode.displayName }} do histórico? Esta ação não pode ser desfeita.") },
+            confirmButton = { TextButton(enabled = enabled, onClick = {
+                pendingDeleteId = null
+                onDelete(saved)
+            }) { Text("Excluir") } },
+            dismissButton = { TextButton(onClick = { pendingDeleteId = null }) { Text("Cancelar") } },
+        )
     }
 }
 
@@ -62,14 +83,19 @@ private fun HistoryItem(
     val swipe = rememberSwipeToDismissBoxState(positionalThreshold = { it * 0.35f })
     val share by rememberUpdatedState(onShare)
     val delete by rememberUpdatedState(onDelete)
-    LaunchedEffect(swipe.currentValue) {
-        when (swipe.currentValue) {
-            SwipeToDismissBoxValue.StartToEnd -> share()
-            SwipeToDismissBoxValue.EndToStart -> delete()
-            SwipeToDismissBoxValue.Settled -> return@LaunchedEffect
+    LaunchedEffect(swipe) {
+        snapshotFlow { swipe.settledValue }.collect { value ->
+            if (value != SwipeToDismissBoxValue.Settled) {
+                // Reposiciona antes de abrir o seletor ou o diálogo. O efeito não é
+                // reiniciado pela mudança de valor durante reset().
+                swipe.reset()
+                when (value) {
+                    SwipeToDismissBoxValue.StartToEnd -> share()
+                    SwipeToDismissBoxValue.EndToStart -> delete()
+                    SwipeToDismissBoxValue.Settled -> Unit
+                }
+            }
         }
-        // Compartilhar não remove o registro; a próxima interação começa no centro.
-        swipe.reset()
     }
     SwipeToDismissBox(state = swipe,
         modifier = Modifier.testTag("history-item-${saved.id}"),
@@ -91,8 +117,8 @@ private fun HistoryItem(
                 Text(saved.game.mode.displayName + " · " +
                     DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).format(Date(saved.createdAt)))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    TextButton(onClick = onShare, enabled = enabled) { Text("Compartilhar →") }
-                    TextButton(onClick = onDelete, enabled = enabled) { Text("← Excluir") }
+                    Text("Compartilhar →", style = MaterialTheme.typography.labelMedium)
+                    Text("← Excluir", style = MaterialTheme.typography.labelMedium)
                 }
             }
         }

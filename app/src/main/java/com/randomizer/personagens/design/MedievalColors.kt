@@ -9,6 +9,10 @@ internal object MedievalColors {
     const val FadedInk = 0xFF6C5439.toInt()
     const val Bronze = 0xFF9A713C.toInt()
     const val Gold = 0xFFD8B775.toInt()
-    const val Wine = 0xFF793C2C.toInt()
-    const val Forest = 0xFF40543A.toInt()
+    const val MaximumGold = 0xFFC99A28.toInt()
+    const val Wine = 0xFF752E45.toInt()
+    const val Forest = 0xFF315B47.toInt()
+    const val Rose = 0xFFECDADF.toInt()
+    const val FilledCard = 0xFF39393B.toInt()
+    const val RuinStone = 0xFFB8B4AC.toInt()
 }

@@ -17,6 +17,40 @@ class DiceRollAnimationTest {
     val compose = createComposeRule()
 
     @Test
+    fun vinteNoD20CelebraSomenteAposRevelarEConcluiUmaVez() {
+        var completions = 0
+        compose.mainClock.autoAdvance = false
+        compose.setContent {
+            RandomizerTheme { DiceRollDialog(sides = 20, result = 20) { completions++ } }
+        }
+        compose.mainClock.advanceTimeBy(900)
+        compose.onNodeWithText("Sucesso crítico!").assertDoesNotExist()
+        compose.mainClock.advanceTimeBy(350)
+        compose.onNodeWithText("Sucesso crítico!").assertIsDisplayed()
+        compose.onNodeWithContentDescription("D20: 20").assertIsDisplayed()
+        compose.mainClock.advanceTimeBy(1000)
+        compose.runOnIdle { assertEquals(0, completions) }
+        compose.mainClock.advanceTimeBy(700)
+        compose.runOnIdle { assertEquals(1, completions) }
+        compose.mainClock.advanceTimeBy(1500)
+        compose.runOnIdle { assertEquals(1, completions) }
+    }
+
+    @Test
+    fun dezenoveNoD20NaoDisparaSucessoCritico() {
+        var completions = 0
+        compose.mainClock.autoAdvance = false
+        compose.setContent {
+            RandomizerTheme { DiceRollDialog(sides = 20, result = 19) { completions++ } }
+        }
+        compose.mainClock.advanceTimeBy(1250)
+        compose.onNodeWithContentDescription("D20: 19").assertIsDisplayed()
+        compose.onNodeWithText("Sucesso crítico!").assertDoesNotExist()
+        compose.mainClock.advanceTimeBy(1000)
+        compose.runOnIdle { assertEquals(1, completions) }
+    }
+
+    @Test
     fun d4RevelaOResultadoAntesDeConcluirUmaUnicaVez() {
         var completions = 0
         compose.mainClock.autoAdvance = false
@@ -28,6 +62,7 @@ class DiceRollAnimationTest {
         compose.runOnIdle { assertEquals(0, completions) }
         compose.mainClock.advanceTimeBy(350)
         compose.onNodeWithContentDescription("D4: 4").assertIsDisplayed()
+        compose.onNodeWithText("Sucesso crítico!").assertDoesNotExist()
         compose.runOnIdle { assertEquals(0, completions) }
         compose.mainClock.advanceTimeBy(1000)
         compose.runOnIdle { assertEquals(1, completions) }
@@ -42,7 +77,7 @@ class DiceRollAnimationTest {
         compose.onNodeWithText("Vilão").performScrollTo().performClick()
         compose.onNodeWithText("Criar personagem").performClick()
         compose.mainClock.autoAdvance = false
-        compose.onNodeWithText("Rolar D20").performScrollTo().performClick()
+        compose.onNodeWithText("Rolar D20").performClick()
         compose.mainClock.advanceTimeBy(1250)
         val resultNode = compose.onNodeWithContentDescription("D20: ", substring = true)
         val description = resultNode.fetchSemanticsNode().config[SemanticsProperties.ContentDescription].single()
@@ -50,10 +85,10 @@ class DiceRollAnimationTest {
         restoration.emulateSavedInstanceStateRestore()
         compose.mainClock.advanceTimeBy(1250)
         compose.onNodeWithContentDescription(description).assertIsDisplayed()
-        compose.mainClock.advanceTimeBy(1000)
+        compose.mainClock.advanceTimeBy(2000)
         compose.onNodeWithContentDescription(description).assertDoesNotExist()
         compose.onNodeWithText("1 de 7 atributos preenchidos").assertDoesNotExist()
-        compose.onNodeWithText("D20: $result → Inteligência.").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("D20: $result → Inteligência.").assertIsDisplayed()
         compose.onNodeWithText("D20 para Dinheiro").performScrollTo().assertIsDisplayed()
     }
 }

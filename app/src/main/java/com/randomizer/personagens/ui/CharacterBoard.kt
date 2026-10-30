@@ -8,11 +8,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -37,7 +35,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
@@ -55,6 +53,7 @@ import com.randomizer.personagens.game.DiceSource
 import com.randomizer.personagens.game.GameState
 import com.randomizer.personagens.game.Stage
 import com.randomizer.personagens.game.displayName
+import com.randomizer.personagens.design.MedievalColors
 
 /** Duas fileiras de cartões e uma ação central, seguindo o tabuleiro de referência. */
 @Composable
@@ -71,46 +70,32 @@ internal fun CharacterBoard(
     resultStatus: @Composable () -> Unit = {},
 ) {
     var detailIndex by rememberSaveable { mutableStateOf<Int?>(null) }
-    val fontScale = LocalDensity.current.fontScale.coerceAtLeast(1f)
-    BoxWithConstraints(Modifier.widthIn(max = 640.dp).fillMaxSize()) {
-        // Em telas baixas ou com fontes ampliadas, mantém as fileiras e permite rolagem.
-        val physicalEntry = game.source == DiceSource.PHYSICAL && game.dieSides > 0
-        val extraTileHeight = (((maxWidth - 56.dp) / 4) - 76.dp).coerceAtLeast(0.dp) * 2
-        val minimumHeight = ((if (physicalEntry) 960 else 880) * fontScale).dp + extraTileHeight
-        val boardHeight = maxOf(maxHeight, minimumHeight)
-        Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
-            Column(
-                modifier = Modifier.fillMaxWidth().height(boardHeight).padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text(game.mode.displayName, color = MaterialTheme.colorScheme.primary,
-                        style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                    OutlinedButton(onClick = onCancel, enabled = !isRolling, shape = CircleShape,
-                        modifier = Modifier.size(52.dp).semantics { contentDescription = "Cancelar" },
-                        contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)) {
-                        Text("X", fontSize = 26.sp)
-                    }
+    Column(Modifier.widthIn(max = 640.dp).fillMaxSize()) {
+        Column(
+            modifier = Modifier.weight(1f).fillMaxWidth().testTag("board-content")
+                .verticalScroll(rememberScrollState()).padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween) {
+                Text(game.mode.displayName, color = MaterialTheme.colorScheme.primary,
+                    style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                OutlinedButton(onClick = onCancel, enabled = !isRolling, shape = CircleShape,
+                    modifier = Modifier.size(52.dp).semantics { contentDescription = "Cancelar" },
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)) {
+                    Text("X", fontSize = 26.sp)
                 }
-                Spacer(Modifier.weight(0.5f))
-                if (characterName.isNotBlank()) {
-                    Text(characterName, style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
-                }
-                StageInstruction(game)
-                Spacer(Modifier.height(20.dp))
-                AttributeRow(game, 0, isRolling, onChange) { detailIndex = it }
-                Spacer(Modifier.height(24.dp))
-                Spacer(Modifier.weight(1f))
-                AttributeRow(game, 1, isRolling, onChange) { detailIndex = it }
-                Spacer(Modifier.height(24.dp))
-                Spacer(Modifier.weight(1f))
-                BoardAction(game, isRolling, onRoll, onChange)
-                if (game.stage == Stage.COMPLETE) {
-                    ResultActions(!isRolling, onEditName, onExport, onHistory)
-                    resultStatus()
-                }
+            }
+            StageInstruction(game, characterName)
+            AttributeRow(game, 0, isRolling, onChange) { detailIndex = it }
+            AttributeRow(game, 1, isRolling, onChange) { detailIndex = it }
+        }
+        FixedFooter("board-footer") {
+            BoardAction(game, isRolling, onRoll, onChange)
+            if (game.stage == Stage.COMPLETE) {
+                ResultActions(!isRolling, onEditName, onExport, onHistory)
+                resultStatus()
             }
         }
     }
@@ -163,21 +148,31 @@ private fun AttributeRow(
                         verticalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
                         Surface(
-                            modifier = Modifier.fillMaxWidth().aspectRatio(1f).testTag("attribute-$index").manuscriptFrame(),
+                            modifier = Modifier.fillMaxWidth().aspectRatio(1f).testTag("attribute-$index")
+                                .manuscriptFrame().attributeFinish(value).attributeSparkles(value).semantics {
+                                    contentDescription = "${attribute.name}: ${value ?: "não definido"}" +
+                                        when (value) { 20 -> ", máximo dourado"; 0 -> ", ruína"; else -> "" }
+                                },
                             shape = RoundedCornerShape(4.dp),
-                            color = if (highlighted) MaterialTheme.colorScheme.surfaceVariant
-                                else MaterialTheme.colorScheme.surface,
-                            border = BorderStroke(if (highlighted) 2.dp else 1.dp,
-                                if (highlighted) MaterialTheme.colorScheme.primary
+                            color = when {
+                                value != null -> Color(MedievalColors.FilledCard)
+                                highlighted -> MaterialTheme.colorScheme.surfaceVariant
+                                else -> MaterialTheme.colorScheme.surface
+                            },
+                            border = BorderStroke(if (value == 20 || highlighted) 2.dp else 1.dp,
+                                if (value == 20) AttributeGold else if (highlighted) MaterialTheme.colorScheme.primary
                                 else MaterialTheme.colorScheme.outline),
                         ) {
                             Box(contentAlignment = Alignment.Center) {
-                                Text(value?.toString() ?: "—", fontSize = 30.sp, fontWeight = FontWeight.Bold,
-                                    fontFamily = FontFamily.Serif,
+                                val valueStyle = MaterialTheme.typography.bodyLarge.copy(
+                                    fontSize = 30.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Serif)
+                                Text(value?.toString() ?: "—", style = valueStyle,
+                                    modifier = Modifier.fracturedValue(value),
                                     color = when (value) {
-                                        20 -> MaterialTheme.colorScheme.primary
-                                        0 -> MaterialTheme.colorScheme.secondary
-                                        else -> MaterialTheme.colorScheme.onSurface
+                                        20 -> AttributeGold
+                                        0 -> Color(MedievalColors.RuinStone)
+                                        null -> MaterialTheme.colorScheme.onSurface
+                                        else -> Color(MedievalColors.Paper)
                                     })
                             }
                         }
@@ -200,7 +195,7 @@ private fun AttributeRow(
 }
 
 @Composable
-private fun StageInstruction(game: GameState) {
+private fun StageInstruction(game: GameState, characterName: String) {
     Column(Modifier.fillMaxWidth().testTag("stage-instruction"),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -208,7 +203,7 @@ private fun StageInstruction(game: GameState) {
             Stage.CHOOSE_MAXIMUM -> "Toque em um atributo do grupo ${game.group + 1} para receber 20"
             Stage.ROLL_MINIMUM -> "Qual atributo receberá 0?"
             Stage.ROLL_ATTRIBUTE -> "D20 para ${CharacterRules.attributes[game.remaining.first()].name}"
-            Stage.COMPLETE -> "Imaginem juntos a personalidade e a história desse personagem."
+            Stage.COMPLETE -> characterName.ifBlank { "Imaginem juntos a personalidade e a história desse personagem." }
         }
         Surface(
             modifier = Modifier.fillMaxWidth().manuscriptFrame(),
@@ -252,7 +247,7 @@ private fun BoardAction(
         }
         if (game.stage == Stage.COMPLETE) return@Column
         if (game.source == DiceSource.PHYSICAL && game.dieSides > 0) {
-            PhysicalResultInput(game, onChange)
+            PhysicalResultInput(game, !isRolling, onChange)
         } else {
             CircularAction(
                 label = if (game.dieSides > 0) "Rolar D${game.dieSides}" else "Escolha\num 20",
@@ -289,11 +284,12 @@ private fun CircularAction(label: String, enabled: Boolean, onClick: () -> Unit)
 }
 
 @Composable
-private fun PhysicalResultInput(game: GameState, onChange: (GameState) -> Unit) {
+private fun PhysicalResultInput(game: GameState, enabled: Boolean, onChange: (GameState) -> Unit) {
     var input by rememberSaveable(game.group, game.stage, game.filledCount) { mutableStateOf("") }
     val result = input.toIntOrNull()
     val valid = result != null && result in 1..game.dieSides
     OutlinedTextField(
+        enabled = enabled,
         value = input,
         onValueChange = { if (it.length <= 2 && it.all { digit -> digit in '0'..'9' }) input = it },
         label = { Text("Resultado do D${game.dieSides}") },
@@ -303,7 +299,7 @@ private fun PhysicalResultInput(game: GameState, onChange: (GameState) -> Unit) 
         singleLine = true,
         modifier = Modifier.widthIn(max = 280.dp).fillMaxWidth(),
     )
-    Button(enabled = valid, onClick = {
+    Button(enabled = enabled && valid, onClick = {
         if (valid) {
             input = ""
             onChange(CharacterGenerator.enterPhysicalResult(game, requireNotNull(result)))

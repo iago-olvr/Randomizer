@@ -4,7 +4,7 @@ Aplicativo Android em português para criar combinações de sete atributos. Uma
 
 ## Funcionalidades
 
-- Visual medieval com pergaminho, tipografia de livro antigo, brasão, bordas de bronze e botão em forma de selo.
+- Visual medieval com pergaminho, vinho nas faixas e ações, tons rosados nos cartões selecionados, tipografia de livro antigo, brasão e bordas de bronze.
 - Transições com deslizamento e mudança de opacidade entre configuração, tabuleiro e resultado, incluindo o retorno à configuração.
 - Dois modos: **Vilão** e **Personagem**.
 - Dados digitais ou entrada dos resultados de dados físicos.
@@ -13,13 +13,15 @@ Aplicativo Android em português para criar combinações de sete atributos. Uma
 - Tabuleiro com quatro cartões quadrados na primeira fileira e três na segunda, com o botão circular de rolagem centralizado na parte inferior.
 - Toque no cartão do grupo ativo para escolher o atributo máximo. O próximo atributo a receber D20 aparece destacado.
 - Botão **?** de 48 dp em cada um dos sete atributos, para consultar as dicas mesmo durante a escolha do máximo.
-- Resultado final para interpretação pelos jogadores.
+- Resultado final para interpretação pelos jogadores; o nome informado substitui a frase na faixa, e removê-lo restaura a frase original.
+- Atributos 20 com borda dourada e partículas de brilho contínuas; atributos 0 com rachaduras de ruína. Cartões preenchidos usam fundo **#39393b**, inclusive no PNG; os vazios mantêm o fundo original. O 20 usa o dourado da borda; o 0 usa cinza-pedra **#B8B4AC**, sem contorno, com uma rachadura atravessando o número e pequenos fragmentos nas bordas; os valores de 1 a 19 usam o mesmo pergaminho claro.
+- Grupos próximos entre si, com conteúdo rolável e ações inferiores fixas.
 - Instruções da etapa atual destacadas acima dos atributos; a última rolagem deixa de aparecer no resultado final.
-- Rodapé inicial sem painel de fundo, com ajuda (**?**), criação (**+**, em destaque) e histórico; a ajuda detalha modos, dados e regras.
+- Rodapé fixo e transparente em todas as telas, deixando o pergaminho aparente. Na inicial, reúne ajuda (**?**), criação (**+**) e histórico; o **+** permanece ligeiramente elevado em relação aos botões laterais, com sombra. A ajuda detalha modos, dados e regras.
 - Resultado com três botões lado a lado: **Editar nome**, **Compartilhar** e **Ver histórico**.
 - Compartilhamento do resultado em PNG, com nome opcional e os sete atributos nas duas fileiras.
 - Histórico local dos personagens concluídos, com data de criação e reabertura do resultado.
-- No histórico, deslize para a direita para compartilhar a imagem ou para a esquerda para excluir; os botões com setas também executam essas ações.
+- No histórico, deslize para a direita para compartilhar a imagem ou para a esquerda para excluir; as setas no cartão são indicações dos gestos, e excluir exige confirmação.
 - Progresso preservado durante rotação e restauração da tela pelo Android.
 - O botão X cancela diretamente a criação; o comando Voltar do Android mantém a confirmação para descartar uma ficha incompleta.
 - Funciona offline, sem conta, servidor, banco de dados ou permissão de internet.
@@ -63,7 +65,7 @@ Os D20 podem produzir 20, mesmo quando outro atributo já foi maximizado. O zero
 
 ### Rolagem animada
 
-Cada rolagem digital anima o D4 ou D20 por aproximadamente 1,1 segundo e exibe o resultado por mais 0,65 segundo antes de preencher o atributo. Durante esse período, novas ações ficam bloqueadas. Recriar a tela retoma a apresentação do mesmo resultado, sem sortear novamente. Os números intermediários são apenas visuais.
+Cada rolagem digital anima o D4 ou D20 por aproximadamente 1,1 segundo e exibe o resultado por mais 0,65 segundo antes de preencher o atributo. Quando o D20 revela 20, uma celebração de sucesso crítico destaca o dado com pulso, borda dourada e uma explosão de brilhos; a revelação dura 1,5 segundo. Nos demais resultados, a revelação continua durando 0,65 segundo. Durante esse período, novas ações ficam bloqueadas. Recriar a tela retoma a apresentação do mesmo resultado, sem sortear novamente. Os números intermediários são apenas visuais.
 
 ## Finalizar, nomear e compartilhar
 
@@ -78,7 +80,7 @@ O painel de compartilhamento oferece os aplicativos instalados no aparelho. Não
 
 O histórico pode ser aberto na tela inicial em **Histótico**, ou no resultado em **Ver histórico**. Toque em um registro para reabrir seus atributos, editar o nome ou compartilhar novamente. Os registros aparecem do mais recente para o mais antigo; editar o nome atualiza o mesmo registro.
 
-Em cada item, deslizar da esquerda para a direita compartilha a imagem sem remover o personagem. Deslizar da direita para a esquerda exclui somente aquele registro, sem confirmação adicional. Os botões **Compartilhar →** e **← Excluir** indicam as direções e permitem executar as ações por toque. Se a exclusão falhar, o app informa o erro e mantém o registro. Excluir uma ficha que estava aberta também encerra sua visualização para que ela não seja recriada automaticamente.
+Em cada item, deslizar da esquerda para a direita compartilha a imagem sem remover o personagem. Deslizar da direita para a esquerda abre uma confirmação para excluir somente aquele registro. Os textos **Compartilhar →** e **← Excluir** indicam as direções; as ações são executadas pelo arrasto. Cancelar a confirmação preserva o personagem. Se a exclusão falhar, o app informa o erro e mantém o registro. Excluir uma ficha que estava aberta também encerra sua visualização para que ela não seja recriada automaticamente.
 
 Os dados ficam em um arquivo privado do app, sem banco de dados ou servidor. Fechar o aplicativo preserva o histórico; desinstalar ou limpar os dados do app o remove. O compartilhamento concede acesso temporário somente à imagem escolhida. O envio pode depender de internet conforme o aplicativo de destino.
 
@@ -129,7 +131,7 @@ app/src/main/java/com/randomizer/personagens/
   ui/CharacterBoard.kt Tabuleiro de atributos e ação de rolagem
   ui/HomeActions.kt    Rodapé inicial com ajuda, criação e histórico
   ui/HelpScreen.kt     Explicação detalhada dos modos e das regras
-  ui/HistoryScreen.kt  Histórico com gestos e botões de compartilhar e excluir
+  ui/HistoryScreen.kt  Histórico com gestos e confirmação de exclusão
   ui/DiceRollDialog.kt  Animação e revelação dos dados digitais
   ui/Theme.kt           Cores e tema
   ui/MedievalDecoration.kt Textura vetorial, brasão, molduras e ornamentos
@@ -148,7 +150,7 @@ As transições de página duram aproximadamente 380 ms e respeitam a escala de 
 - `lintDebug`, `assembleDebug` e `assembleDebugAndroidTest` concluídos com sucesso com o tema medieval e as transições de página.
 - XMLs conferidos e disponibilidade das dependências principais verificada.
 - Gradle Wrapper conferido pelo SHA256 oficial; o hash da distribuição está fixado nas propriedades do Wrapper.
-- Os 24 testes Android incluem entrada física, restauração de estado, animação, disposição dos cartões, maximização por toque, instruções acima dos atributos, três ações no resultado, sete dicas, ajuda, rodapé inicial, exportação PNG, transições entre páginas, persistência e exclusão do histórico, gestos, nome e compartilhamento. Foram compilados, mas sua execução no dispositivo permanece pendente.
+- Os 32 testes Android incluem entrada física, restauração de estado, animação, disposição dos cartões, maximização por toque, instruções acima dos atributos, três ações no resultado, sete dicas, ajuda, rodapé inicial, exportação PNG, transições entre páginas, persistência e exclusão do histórico, gestos sem compartilhamento duplicado, confirmação e cancelamento da exclusão, troca da frase pelo nome, rodapé fixo com fonte ampliada e destaques dos extremos na ficha e no PNG, fundo dos cartões preenchidos e celebração exclusiva do 20 no D20 e movimento das partículas somente enquanto o atributo contém 20. Foram compilados, mas sua execução no dispositivo permanece pendente.
 - A execução dos testes de interface precisa de um aparelho ou emulador acessível pelo ADB. No ambiente de execução automatizada desta alteração, o ADB encontrou uma restrição de permissão ao acessar sua pasta de preferências.
 
 A pasta local `.tools/` contém as ferramentas temporárias e o relatório dessa validação JVM. Ela é ignorada pelo Git e não faz parte do aplicativo.

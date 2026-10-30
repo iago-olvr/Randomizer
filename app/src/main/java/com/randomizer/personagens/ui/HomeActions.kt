@@ -18,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
@@ -25,18 +26,20 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.randomizer.personagens.design.MedievalColors
 
 @Composable
 internal fun HomeHeading() {
     Text("Um personagem.\nMuitas histórias.",
-        style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
+        style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold,
+        color = MaterialTheme.colorScheme.primary)
 }
 
 /** Rodapé fixo: as opções podem rolar sem esconder as três ações principais. */
 @Composable
 internal fun HomeActions(enabled: Boolean, onHelp: () -> Unit, onStart: () -> Unit, onHistory: () -> Unit) {
     Box {
-        Row(Modifier.fillMaxWidth().testTag("home-actions").padding(horizontal = 12.dp, vertical = 12.dp),
+        Row(Modifier.fillMaxWidth().testTag("home-actions").padding(horizontal = 12.dp, vertical = 4.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Bottom) {
             val labels = listOf("Como jogar", "Criar personagem", "Histótico")
             val actions = listOf(onHelp, onStart, onHistory)
@@ -44,8 +47,10 @@ internal fun HomeActions(enabled: Boolean, onHelp: () -> Unit, onStart: () -> Un
                 Column(Modifier.weight(1f).clickable(enabled = enabled, role = Role.Button, onClick = actions[index]),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary,
+                    Surface(shape = CircleShape,
+                        color = Color(MedievalColors.Wine),
+                        contentColor = Color(MedievalColors.Paper),
+                        shadowElevation = if (index == 1) 10.dp else 3.dp,
                         modifier = Modifier.size(if (index == 1) 80.dp else 60.dp)
                             .testTag("home-icon-$index").sealRim()) {
                         Box(Modifier.padding(8.dp), contentAlignment = Alignment.Center) {
@@ -65,7 +70,7 @@ internal fun HomeActions(enabled: Boolean, onHelp: () -> Unit, onStart: () -> Un
 
 @Composable
 private fun HistoryIcon() {
-    val color = MaterialTheme.colorScheme.onPrimary
+    val color = Color(MedievalColors.Paper)
     Canvas(Modifier.size(28.dp)) {
         val stroke = 2.dp.toPx()
         drawCircle(color, size.minDimension * 0.4f, style = Stroke(stroke))
