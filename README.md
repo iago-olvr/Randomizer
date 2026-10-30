@@ -39,7 +39,7 @@ Aplicativo Android em português para criar combinações de sete atributos. Uma
 | Saúde | Se levantar a mão DEUS puxa | Data de válidade do Mel |
 | Beleza | Da medo no espelho | Filho do Michael B. Jordan com a Alessandra Negrini |
 | Físico | Alvo de Bullying | Escultura de Michelangelo |
-| Altura | Desde de Fadas Até Anões | Minímo 2,10 de altura |
+| Altura | Desde Fadas Até Anões | Minímo 2,10 de altura |
 | Cabelo | Só o Couro Cabeçudo | Propaganda de Xampu |
 
 ### Vilão

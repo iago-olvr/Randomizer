@@ -41,7 +41,7 @@ internal fun HomeActions(enabled: Boolean, onHelp: () -> Unit, onStart: () -> Un
     Box {
         Row(Modifier.fillMaxWidth().testTag("home-actions").padding(horizontal = 12.dp, vertical = 4.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Bottom) {
-            val labels = listOf("Como jogar", "Criar personagem", "Histótico")
+            val labels = listOf("Como jogar", "Criar personagem", "Histórico")
             val actions = listOf(onHelp, onStart, onHistory)
             labels.forEachIndexed { index, label ->
                 Column(Modifier.weight(1f).clickable(enabled = enabled, role = Role.Button, onClick = actions[index]),
