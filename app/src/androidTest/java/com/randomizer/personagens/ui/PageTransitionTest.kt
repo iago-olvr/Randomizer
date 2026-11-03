@@ -55,14 +55,14 @@ class PageTransitionTest {
         compose.onNodeWithText("Dados físicos").performScrollTo().performClick()
         compose.onNodeWithText("Criar personagem").performClick()
         for (result in 1..7) {
-            compose.onNodeWithText("Resultado do D20").performScrollTo().performTextInput(result.toString())
+            compose.onNodeWithText("Resultado do D20").performTextInput(result.toString())
             if (result == 7) compose.mainClock.autoAdvance = false
-            compose.onNodeWithText("Confirmar resultado").performScrollTo().performClick()
+            compose.onNodeWithText("Confirmar resultado").performClick()
         }
         compose.mainClock.advanceTimeBy(500)
         compose.onNodeWithTag("page-board").assertDoesNotExist()
         compose.onNodeWithTag("page-result").assertExists()
-        compose.onNodeWithText("Compartilhar").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Compartilhar").assertIsDisplayed()
         for (value in 1..7) {
             compose.onNodeWithText(value.toString(), useUnmergedTree = true).performScrollTo().assertIsDisplayed()
         }

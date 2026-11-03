@@ -15,7 +15,7 @@ object CharacterRules {
         Attribute("Saúde", "0 -> Se levantar a mão DEUS puxa | 20 -> Data de válidade do Mel"),
         Attribute("Beleza", "0 -> Da medo no espelho | 20 -> Filho do Michael B. Jordan com a Alessandra Negrini"),
         Attribute("Físico", "0 -> Alvo de Bullying | 20 -> Escultura de Michelangelo"),
-        Attribute("Altura", "0 -> Desde de Fadas Até Anões | 20 -> Minímo 2,10 de altura"),
+        Attribute("Altura", "0 -> Desde Fadas Até Anões | 20 -> Minímo 2,10 de altura"),
         Attribute("Cabelo", "0 -> Só o Couro Cabeçudo | 20 -> Propaganda de Xampu"),
     )
     val groups = listOf(0..3, 4..6)

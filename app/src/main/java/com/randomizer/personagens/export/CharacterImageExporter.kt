@@ -5,10 +5,13 @@ import android.graphics.Canvas
 import android.graphics.LinearGradient
 import android.graphics.Shader
 import android.graphics.Paint
+import android.graphics.Path
+import android.graphics.Rect
 import android.graphics.Typeface
 import com.randomizer.personagens.game.CharacterSummary
 import com.randomizer.personagens.game.GameState
 import com.randomizer.personagens.design.MedievalColors
+import com.randomizer.personagens.design.RuinMark
 import java.io.IOException
 import java.io.OutputStream
 
@@ -29,7 +32,6 @@ internal object CharacterImageExporter {
 
     private fun drawSummary(canvas: Canvas, summary: CharacterSummary, name: String) {
         val gold = MedievalColors.Bronze
-        val purple = MedievalColors.Wine
         val white = MedievalColors.Ink
         val muted = MedievalColors.FadedInk
         val paint = Paint(Paint.ANTI_ALIAS_FLAG)
@@ -80,18 +82,66 @@ internal object CharacterImageExporter {
             attributes.forEachIndexed { index, attribute ->
                 val left = if (groupIndex == 0) 64f + index * (tile + spacing)
                     else 64f + spacing + index * (tile + spacing)
-                paint.color = MedievalColors.Paper
+                paint.color = MedievalColors.FilledCard
                 paint.style = Paint.Style.FILL
                 canvas.drawRoundRect(left, top, left + tile, top + tile, 8f, 8f, paint)
-                paint.color = gold
+                paint.color = if (attribute.value == 20) MedievalColors.MaximumGold else gold
                 paint.style = Paint.Style.STROKE
-                paint.strokeWidth = 3f
+                paint.strokeWidth = if (attribute.value == 20) 7f else 3f
                 canvas.drawRoundRect(left, top, left + tile, top + tile, 8f, 8f, paint)
                 paint.strokeWidth = 1f
                 canvas.drawRect(left + 10f, top + 10f, left + tile - 10f, top + tile - 10f, paint)
+                if (attribute.value == 20) {
+                    paint.color = 0xFFFFE8A0.toInt()
+                    paint.strokeWidth = 4f
+                    listOf(left + 30f to top + 30f, left + tile - 30f to top + tile - 30f).forEach { (x, y) ->
+                        canvas.drawLine(x - 12f, y, x + 12f, y, paint)
+                        canvas.drawLine(x, y - 12f, x, y + 12f, paint)
+                    }
+                } else if (attribute.value == 0) {
+                    paint.color = 0xFF67594B.toInt()
+                    paint.strokeWidth = 4f
+                    val crack = Path().apply {
+                        moveTo(left + tile * .22f, top)
+                        lineTo(left + tile * .18f, top + tile * .14f)
+                        lineTo(left + tile * .29f, top + tile * .23f)
+                        lineTo(left + tile * .23f, top + tile * .36f)
+                        moveTo(left + tile, top + tile * .62f)
+                        lineTo(left + tile * .82f, top + tile * .69f)
+                        lineTo(left + tile * .88f, top + tile * .81f)
+                        lineTo(left + tile * .72f, top + tile)
+                    }
+                    canvas.drawPath(crack, paint)
+                    paint.style = Paint.Style.FILL
+                    paint.color = MedievalColors.RuinStone
+                    RuinMark.fragments.forEach { points ->
+                        canvas.drawPath(Path().apply {
+                            points.forEachIndexed { position, (x, y) ->
+                                if (position == 0) moveTo(left + tile * x, top + tile * y)
+                                else lineTo(left + tile * x, top + tile * y)
+                            }
+                            close()
+                        }, paint)
+                    }
+                }
                 text(attribute.value.toString(), left + tile / 2, top + 142f, 88f,
-                    when (attribute.value) { 20 -> MedievalColors.Forest; 0 -> purple; else -> white },
+                    when (attribute.value) { 20 -> MedievalColors.MaximumGold; 0 -> MedievalColors.RuinStone; else -> MedievalColors.Paper },
                     bold = true, centered = true)
+                if (attribute.value == 0) {
+                    val bounds = Rect()
+                    paint.getTextBounds("0", 0, 1, bounds)
+                    val numberLeft = left + tile / 2 - paint.measureText("0") / 2 + bounds.left
+                    val numberTop = top + 142f + bounds.top
+                    paint.style = Paint.Style.STROKE
+                    paint.strokeWidth = bounds.width() * .1f
+                    paint.color = MedievalColors.FilledCard
+                    canvas.drawPath(Path().apply {
+                        RuinMark.fracture.forEachIndexed { position, (x, y) ->
+                            if (position == 0) moveTo(numberLeft + bounds.width() * x, numberTop + bounds.height() * y)
+                            else lineTo(numberLeft + bounds.width() * x, numberTop + bounds.height() * y)
+                        }
+                    }, paint)
+                }
                 text(attribute.name, left + tile / 2, top + tile + 46f, 30f, white, centered = true)
             }
         }

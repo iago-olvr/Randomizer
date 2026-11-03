@@ -27,12 +27,13 @@ class HistoryScreenTest {
 
     @Test fun deslizarParaDireitaCompartilhaSemExcluirEParaEsquerdaExclui() {
         val characters = mutableStateOf(listOf(saved))
+        val enabled = mutableStateOf(true)
         var shares = 0
         var deleted: SavedCharacter? = null
         compose.setContent {
             RandomizerTheme {
-                HistoryScreen(characters.value, true, {}, {},
-                    onShare = { shares++ },
+                HistoryScreen(characters.value, enabled.value, {}, {},
+                    onShare = { shares++; enabled.value = false },
                     onDelete = { deleted = it; characters.value = emptyList() })
             }
         }
@@ -42,14 +43,20 @@ class HistoryScreenTest {
             assertEquals(1, shares)
             assertEquals(listOf(saved), characters.value)
             assertEquals(null, deleted)
+            enabled.value = true
         }
+        compose.waitForIdle()
+        compose.runOnIdle { assertEquals(1, shares) }
         compose.onNodeWithTag("history-item-test-id").performTouchInput { swipeLeft() }
         compose.waitForIdle()
+        compose.runOnIdle { assertEquals(null, deleted) }
+        compose.onNodeWithText("Excluir personagem?").assertExists()
+        compose.onNodeWithText("Excluir").performClick()
         compose.runOnIdle { assertEquals(saved, deleted) }
         compose.onNodeWithText("Nenhum personagem salvo ainda.").assertExists()
     }
 
-    @Test fun botoesComSetasExecutamMesmasAcoesSemAbrirFicha() {
+    @Test fun textosDasSetasNaoCompartilhamEExcluirPodeSerCancelado() {
         var shares = 0
         var deletes = 0
         var opens = 0
@@ -59,11 +66,17 @@ class HistoryScreenTest {
             }
         }
         compose.onNodeWithText("Compartilhar →").performScrollTo().performClick()
-        compose.onNodeWithText("← Excluir").performScrollTo().performClick()
         compose.runOnIdle {
-            assertEquals(1, shares)
-            assertEquals(1, deletes)
-            assertEquals(0, opens)
+            assertEquals(0, shares)
+            assertEquals(0, deletes)
+            assertEquals(1, opens)
         }
+        compose.onNodeWithTag("history-item-test-id").performTouchInput { swipeLeft() }
+        compose.onNodeWithText("Cancelar").performClick()
+        compose.runOnIdle { assertEquals(0, deletes) }
+        compose.onNodeWithTag("history-item-test-id").performTouchInput { swipeRight() }
+        compose.runOnIdle { assertEquals(1, shares) }
+        compose.onNodeWithTag("history-item-test-id").performTouchInput { swipeRight() }
+        compose.runOnIdle { assertEquals(2, shares) }
     }
 }

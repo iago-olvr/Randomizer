@@ -262,19 +262,21 @@ fun RandomizerApp() {
                                     HeraldicDivider()
                                     SetupScreen(mode, source, { mode = it }, { source = it }, activePage)
                                 }
-                                HomeActions(enabled = activePage,
-                                    onHelp = { showHelp = true },
-                                    onStart = {
-                                        if (!started) {
-                                            characterId = UUID.randomUUID().toString()
-                                            createdAt = System.currentTimeMillis()
-                                            characterName = ""
-                                            game = CharacterGenerator.start(mode, source)
-                                            started = true
-                                        }
-                                    },
-                                    onHistory = { showHistory = true },
-                                )
+                                FixedFooter("setup-footer") {
+                                    HomeActions(enabled = activePage,
+                                        onHelp = { showHelp = true },
+                                        onStart = {
+                                            if (!started) {
+                                                characterId = UUID.randomUUID().toString()
+                                                createdAt = System.currentTimeMillis()
+                                                characterName = ""
+                                                game = CharacterGenerator.start(mode, source)
+                                                started = true
+                                            }
+                                        },
+                                        onHistory = { showHistory = true },
+                                    )
+                                }
                             }
                         }
                     }
@@ -360,7 +362,8 @@ private fun SetupScreen(
 @Composable
 private fun ChoiceCard(title: String, description: String, selected: Boolean, enabled: Boolean, onClick: () -> Unit) {
     Card(onClick = onClick, enabled = enabled, modifier = Modifier.fillMaxWidth().manuscriptFrame(),
-        border = BorderStroke(if (selected) 2.dp else 1.dp, MaterialTheme.colorScheme.outline),
+        border = BorderStroke(if (selected) 2.dp else 1.dp,
+            if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline),
         colors = CardDefaults.cardColors(containerColor = if (selected)
             MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.surface)) {
         Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {

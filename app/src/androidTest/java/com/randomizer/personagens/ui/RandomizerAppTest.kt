@@ -35,19 +35,21 @@ class RandomizerAppTest {
         }
         assertTrue(icons[1].width > icons[0].width)
         assertTrue(icons[1].height > icons[2].height)
+        assertTrue(icons[1].top < icons[0].top)
+        assertTrue(icons[1].top < icons[2].top)
         assertTrue(actions.all { it.top >= footer.top && it.bottom <= footer.bottom })
         compose.onNodeWithText("RANDOMIZER").assertDoesNotExist()
         compose.onNodeWithText("Use os dados para descobrir os atributos. Depois, dê vida ao resultado.").assertDoesNotExist()
         compose.onNodeWithText("Tipo de Personagem").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Como jogar").performClick()
         compose.onNodeWithTag("page-help").assertExists()
-        compose.onNodeWithContentDescription("Voltar").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Voltar às opções").assertIsDisplayed()
         compose.onNodeWithText("Voltar").assertDoesNotExist()
         compose.onNodeWithText("Modo Personagem — segundo grupo").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Nome, compartilhamento e histórico").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithContentDescription("Voltar às opções").performScrollTo().performClick()
+        compose.onNodeWithContentDescription("Voltar às opções").performClick()
         compose.onNodeWithText("Criar personagem").performClick()
-        compose.onNodeWithText("Resultado do D20").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Resultado do D20").assertIsDisplayed()
         compose.onNodeWithText("Vilão").performScrollTo().assertIsDisplayed()
     }
 
@@ -59,15 +61,15 @@ class RandomizerAppTest {
         compose.onNodeWithText("Dados físicos").performScrollTo().performClick()
         compose.onNodeWithText("Criar personagem").performClick()
         repeat(7) {
-            compose.onNodeWithText("Resultado do D20").performScrollTo().performTextClearance()
+            compose.onNodeWithText("Resultado do D20").performTextClearance()
             compose.onNodeWithText("Resultado do D20").performTextInput("17")
-            compose.onNodeWithText("Confirmar resultado").performScrollTo().performClick()
+            compose.onNodeWithText("Confirmar resultado").performClick()
         }
         compose.waitUntil(5_000) {
             compose.onAllNodes(androidx.compose.ui.test.hasText("Salvo no histórico local"))
                 .fetchSemanticsNodes().isNotEmpty()
         }
-        compose.onNodeWithText("Editar nome").performScrollTo().performClick()
+        compose.onNodeWithText("Editar nome").performClick()
         compose.onNodeWithText("Nome (opcional)").performTextInput(name)
         compose.onNodeWithText("Salvar nome").performClick()
         compose.waitUntil(5_000) {
@@ -78,7 +80,7 @@ class RandomizerAppTest {
         compose.onNodeWithText("Histótico").performClick()
         compose.onNodeWithText(name).performScrollTo().performClick()
         compose.onNodeWithText(name).performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("Compartilhar").performScrollTo().assertIsEnabled()
+        compose.onNodeWithText("Compartilhar").assertIsEnabled()
     }
 
     @Test
@@ -87,7 +89,7 @@ class RandomizerAppTest {
         compose.onNodeWithText("Vilão").performScrollTo().performClick()
         compose.onNodeWithText("Dados físicos").performScrollTo().performClick()
         compose.onNodeWithText("Criar personagem").performClick()
-        compose.onNodeWithText("Resultado do D20").performScrollTo().performTextInput("0")
+        compose.onNodeWithText("Resultado do D20").performTextInput("0")
         compose.onNodeWithText("Confirmar resultado").assertIsNotEnabled()
     }
 
@@ -98,7 +100,7 @@ class RandomizerAppTest {
         compose.onNodeWithText("Vilão").performScrollTo().performClick()
         compose.onNodeWithText("Dados físicos").performScrollTo().performClick()
         compose.onNodeWithText("Criar personagem").performClick()
-        compose.onNodeWithText("Resultado do D20").performScrollTo().performTextInput("17")
+        compose.onNodeWithText("Resultado do D20").performTextInput("17")
         compose.onNodeWithText("Confirmar resultado").assertIsEnabled().performClick()
         restoration.emulateSavedInstanceStateRestore()
         compose.onNodeWithText("D20 para Dinheiro").performScrollTo().assertIsDisplayed()
